@@ -2,66 +2,91 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { Axios } from '../api/Axios';
 
-const Book = ({searchValue}) => {
+const Book = ({searchValue, searchTarget, QueryType}) => {
   const [books, setBooks] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
-    setBooks([]); // 새로운 검색어가 입력되면 초기화
-    setPage(1);
-    setHasMore(true);
-  }, [searchValue]);
+    setPage(1);  // page 초기화
+    setBooks([]);  // books 초기화
+  }, [QueryType]);
 
   useEffect(() => {
-    if (!hasMore) return;
-
     const fetchBookInfo = async () => {
       try {
-        const response = await Axios.get("", { 
-          params: { 
-            query: searchValue,
-            page: page,
-            size: 10
-            }
-        });
-        setBooks((prevBooks) => [...prevBooks, ...response.data.documents]); // 기존 데이터 유지하며 추가
-        setHasMore(!response.data.meta.is_end);
+        let response;
+        
+        if (searchValue) { // 검색어가 있을 경우 검색 API 호출
+          response = await Axios.get("/api/search", {
+            params: {
+              QueryType: QueryType,
+              SearchTarget: searchTarget,
+              Query: searchValue, // 검색어 전달
+              Start: page,
+              MaxResults: 10,
+            },
+          });
+        } else { // 검색어가 없으면 기본 ItemList API 호출
+          response = await Axios.get("/api/books", {
+            params: {
+              QueryType: QueryType,
+              SearchTarget: searchTarget,
+              Start: page,
+              MaxResults: 10,
+            },
+          });
+        }
+
+        if (page === 1) {
+          setBooks(response.data.item || []); // 첫 페이지일 때는 새로 세팅
+        } else {
+          setBooks(prevBooks => [...prevBooks, ...response.data.item || []]);  // 이후 페이지는 덧붙이기
+        }
+
+        if (response.data.length < 10) {
+          setHasMore(false); // 더 이상 데이터가 없으면
+        }
       } catch (error) {
-        console.log("API 요청 실패", error);
+        console.error("API 요청 실패", error);
       }
     };
+
     fetchBookInfo();
-  }, [searchValue, page, hasMore]);
+  }, [searchValue, page, QueryType, searchTarget]); // 검색어 변경 시마다 새로 요청
+
 
   const loadMore = () => {
-    if (hasMore) setPage((prevPage) => prevPage + 1);
+    if (hasMore) {
+      setPage(prevPage => prevPage + 1); // 페이지 증가
+    }
   };
   
   return (
     <AllWrapper>
-      {searchValue === "" && "도서 검색 사이트입니다. 검색을 해주세요!"}
       {books.map((book, index)=>(
         <BookWrapper key={index}>
             <LeftWrapper>
-              <BookImg src={book.thumbnail || null}/>
+              <BookImg src={book.cover || null}/>
             </LeftWrapper>
             <RightWrapper>
               <FirstWrapper>
                 <BookTitle>{book.title}</BookTitle>
-                <BookInfo>{book.authors}</BookInfo>
+                <BookInfo>{book.author}</BookInfo>
                 <BookDescription>
-                  {book.contents}
+                  {book.description}
                 </BookDescription>
               </FirstWrapper>
               <SecondWrapper>
-                <Btn>{book.price}원</Btn>
-                <Btn>{book.status}</Btn>
+                <Btn>{book.priceStandard}원</Btn>
+                <Btn>{book.publisher}</Btn>
               </SecondWrapper>
             </RightWrapper>
           </BookWrapper>
       ))}
-      {(searchValue !== "" && books.length !== 0) && <LoadMoreBtn onClick={loadMore}>더보기</LoadMoreBtn>}
+      {hasMore && (
+        <LoadMoreBtn onClick={loadMore}>더보기</LoadMoreBtn>
+      )}
     </AllWrapper>
   );
 };

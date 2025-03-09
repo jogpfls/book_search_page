@@ -4,26 +4,42 @@ import { CiSearch } from "react-icons/ci";
 import Book from "../../component/Book";
 
 const Search = () => {
-  const [selectedBook, setSelectedBook] = useState("all");
+  const [selectedBook, setSelectedBook] = useState("Book");
+  const [searchInput, setSearchInput] = useState("");
   const [searchValue, setSearchValue] = useState("");
-
-  const saveSearchHistory = (e) => {
-    setSearchValue(e.target.value);
+  const [queryType, setQueryType] = useState("ItemNewAll");
+  const handleInputChange = (e) => {
+    setSearchInput(e.target.value);
   }
 
+  const handleSearch = () => {
+    setSearchValue(searchInput);
+  };
+
+  const handleAllBook = () => {
+    setSelectedBook("Book");
+  }
+
+  const handleDomesticBook = () => {
+    setSelectedBook("eBook")
+  }
+
+  const handleForeignBook = () => {
+    setSelectedBook("Foreign")
+  }
 
   return (
     <Wrapper>
       <TypeWrapper>
-        <BookType 
-        onClick={() => {setSelectedBook("all")}}
-        $isActive={selectedBook==="all"}>전체 도서</BookType>
         <BookType
-        onClick={() => {setSelectedBook("domestic")}}
-        $isActive={selectedBook==="domestic"}>국내 도서</BookType>
+        onClick={handleAllBook}
+        $isActive={selectedBook==="Book"}>전체 도서</BookType>
         <BookType
-        onClick={() => {setSelectedBook("foreign")}}
-        $isActive={selectedBook==="foreign"}>외국 도서</BookType>
+        onClick={handleDomesticBook}
+        $isActive={selectedBook==="eBook"}>전자 도서</BookType>
+        <BookType
+        onClick={handleForeignBook}
+        $isActive={selectedBook==="Foreign"}>외국 도서</BookType>
       </TypeWrapper>
       <BookWrapper>
         <CategoryWrapper>
@@ -31,23 +47,34 @@ const Search = () => {
             <SearchWrapper>
               <SearchBox 
               placeholder='도서 이름을 검색하세요'
-              onChange={saveSearchHistory}
+              value={searchInput}
+              onChange={handleInputChange}
               ></SearchBox>
-              <IconBox>
+              <IconBox onClick={handleSearch}>
                 <CiSearch size={24}/>
               </IconBox>
             </SearchWrapper>
             <BtnWrapper>
-              <Btn>전체</Btn>
-              <Btn>인기순</Btn>
-              <Btn>최신순</Btn>
+              <Btn 
+              onClick={() => {setQueryType("ItemNewAll")}}
+              $isActive={queryType === "ItemNewAll"}>신간 전체 리스트</Btn>
+              <Btn 
+              onClick={() => {setQueryType("Bestseller")}}
+              $isActive={queryType === "Bestseller"}
+              >베스트 셀러</Btn>
+              <Btn 
+              onClick={() => {setQueryType("ItemNewSpecial")}}
+              $isActive={queryType === "ItemNewSpecial"}
+              >주목할만한 신간 리스트</Btn>
             </BtnWrapper>
           </LeftWrapper>
         </CategoryWrapper>
           <BookInfo>
-            {selectedBook === "all" ?
-              <Book searchValue={searchValue}/>
-            : "아직 준비중인 서비스입니다."}
+              <Book 
+              QueryType={queryType}
+              searchValue={searchValue}
+              searchTarget={selectedBook}
+              />
           </BookInfo>
       </BookWrapper>
     </Wrapper>
@@ -128,15 +155,13 @@ const Btn = styled.div`
   padding: 0 10px;
   border-radius: 5px;
   border: 1px solid rgb(224, 224, 224);
-  background-color: #FFFFFF;
+  background-color: ${({$isActive})=>($isActive ? "rgb(244, 244, 244)" : "#ffffff")};
   display: flex;
   justify-content: center;
   align-items: center;
+  font-size: 12px;
 
   cursor: pointer;
-  &:active{
-    background-color: rgb(244, 244, 244);
-  }
 `;
 
 const BookInfo = styled.div`

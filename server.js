@@ -4,7 +4,7 @@ const cors = require("cors");
 require("dotenv").config(); // .env 파일 사용
 
 const corsOptions = {
-  origin: "http://localhost:3000", // 프론트엔드 주소
+  origin: ["https://finder-check.netlify.app", "http://localhost:3000"],
   methods: "GET,POST",
   credentials: true,
 };

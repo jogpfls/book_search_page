@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { Axios } from '../api/Axios';
+import { fetchBookSearch } from '../api/SearchAPI';
+import { fetchBookInfo } from '../api/BookListAPI';
 
 const Book = ({searchValue, searchTarget, QueryType}) => {
   const [books, setBooks] = useState([]);
@@ -13,46 +14,23 @@ const Book = ({searchValue, searchTarget, QueryType}) => {
   }, [QueryType]);
 
   useEffect(() => {
-    const fetchBookInfo = async () => {
+    const fetchBook = async () => {
       try {
-        let response;
+        const response = searchValue
+          ? await fetchBookSearch(QueryType, searchTarget, searchValue, page)
+          : await fetchBookInfo(QueryType, searchTarget, page);
+
+        const newBooks = response?.data?.item || [];
         
-        if (searchValue) { // 검색어가 있을 경우 검색 API 호출
-          response = await Axios.get("/api/search", {
-            params: {
-              QueryType: QueryType,
-              SearchTarget: searchTarget,
-              Query: searchValue, // 검색어 전달
-              Start: page,
-              MaxResults: 10,
-            },
-          });
-        } else { // 검색어가 없으면 기본 ItemList API 호출
-          response = await Axios.get("/api/books", {
-            params: {
-              QueryType: QueryType,
-              SearchTarget: searchTarget,
-              Start: page,
-              MaxResults: 10,
-            },
-          });
-        }
+        setBooks(prevBooks => (page === 1 ? newBooks : [...prevBooks, ...newBooks]));
+        setHasMore(newBooks.length === 10);
 
-        if (page === 1) {
-          setBooks(response.data.item || []); // 첫 페이지일 때는 새로 세팅
-        } else {
-          setBooks(prevBooks => [...prevBooks, ...response.data.item || []]);  // 이후 페이지는 덧붙이기
-        }
-
-        if (response.data.length < 10) {
-          setHasMore(false); // 더 이상 데이터가 없으면
-        }
       } catch (error) {
         console.error("API 요청 실패", error);
       }
     };
 
-    fetchBookInfo();
+    fetchBook();
   }, [searchValue, page, QueryType, searchTarget]); // 검색어 변경 시마다 새로 요청
 
 

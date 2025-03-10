@@ -8,6 +8,7 @@ const Search = () => {
   const [searchInput, setSearchInput] = useState("");
   const [searchValue, setSearchValue] = useState("");
   const [queryType, setQueryType] = useState("ItemNewAll");
+  
   const handleInputChange = (e) => {
     setSearchInput(e.target.value);
   }
